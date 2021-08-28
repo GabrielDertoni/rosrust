@@ -29,9 +29,6 @@ fn main() {
         .chain(cmake_alt_paths.iter())
         .chain(extra_paths.iter())
         .collect::<Vec<_>>();
-    for path in &paths {
-        rerun_if_folder_content_changed(Path::new(path));
-    }
 
     let messages = paths
         .iter()
