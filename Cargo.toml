@@ -5,6 +5,7 @@ members = [
     "rosrust_msg",
     "rosrust_actionlib",
     "rosrust_diagnostics",
+    "rosrust_async",
     "ros_message",
     "examples",
 ]
