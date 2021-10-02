@@ -7,4 +7,5 @@ edition = "2018"
 
 [dependencies]
 rosrust = { version = "0.9", path = "../rosrust" }
+rosrust_actionlib = { version = "0.0.1", path = "../rosrust_actionlib" }
 tokio = { version = "1.11.0", features = ["full"] }
