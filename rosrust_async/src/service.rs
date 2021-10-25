@@ -65,7 +65,7 @@ impl<S: ServicePair> RequestHandle<S> {
     // NOTE: The ideal implementation is for this function to return some kind of
     //       result indicating if the response was send successfully. But in the
     //       current wrapper design, I don't think that's possible.
-    pub async fn send_ok(self, response: S::Response) {
+    pub fn send_ok(self, response: S::Response) {
         if let Err(_) = self.tx.send(Ok(response)) {
             panic!("failed to send value");
         }
