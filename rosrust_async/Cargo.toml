@@ -6,6 +6,6 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rosrust = { version = "0.9", path = "../rosrust" }
-rosrust_actionlib = { version = "0.0.1", path = "../rosrust_actionlib" }
+rosrust = { path = "../rosrust" }
+rosrust_actionlib = { path = "../rosrust_actionlib" }
 tokio = { version = "1.11.0", features = ["full"] }
