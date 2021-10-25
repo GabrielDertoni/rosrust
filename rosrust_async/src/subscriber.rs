@@ -1,7 +1,7 @@
 use std::ops::Deref;
 use tokio::sync::broadcast::{ self, error::RecvError };
 
-use rosrust::error::Result;
+use rosrust::error::Result as RosResult;
 use rosrust::Message;
 
 pub struct Subscriber<M> {
@@ -12,12 +12,16 @@ pub struct Subscriber<M> {
 }
 
 impl<M> Subscriber<M> {
-    fn new(rx: broadcast::Receiver<M>, tx: broadcast::Sender<M>, raii: rosrust::Subscriber) -> Subscriber<M> {
+    fn create(rx: broadcast::Receiver<M>, tx: broadcast::Sender<M>, raii: rosrust::Subscriber) -> Subscriber<M> {
         Subscriber { rx, tx, raii }
     }
 }
 
 impl<M: Message> Subscriber<M> {
+    pub fn new(topic: impl AsRef<str>, queue_size: usize) -> RosResult<Self> {
+        subscribe(topic, queue_size)
+    }
+
     pub async fn recv(&mut self) -> Option<M> {
         loop {
             match self.try_recv().await {
@@ -29,7 +33,7 @@ impl<M: Message> Subscriber<M> {
         }
     }
 
-    pub async fn try_recv(&mut self) -> std::result::Result<M, RecvError> {
+    pub async fn try_recv(&mut self) -> Result<M, RecvError> {
         self.rx.recv().await
     }
 }
@@ -37,7 +41,7 @@ impl<M: Message> Subscriber<M> {
 impl<M> Clone for Subscriber<M> {
     fn clone(&self) -> Subscriber<M> {
         // All of the inner types are cheap to clone
-        Subscriber::new(self.tx.subscribe(), self.tx.clone(), self.raii.clone())
+        Subscriber::create(self.tx.subscribe(), self.tx.clone(), self.raii.clone())
     }
 }
 
@@ -49,12 +53,12 @@ impl<M> Deref for Subscriber<M> {
     }
 }
 
-pub fn subscribe<M: Message>(topic: impl AsRef<str>, queue_size: usize) -> Result<Subscriber<M>> {
+pub fn subscribe<M: Message>(topic: impl AsRef<str>, queue_size: usize) -> RosResult<Subscriber<M>> {
     let (tx, rx) = broadcast::channel(1);
     let tx_clone = tx.clone();
     let raii = rosrust::subscribe(topic.as_ref(), queue_size, move |msg: M| {
         tx_clone.send(msg).unwrap();
     })?;
 
-    Ok(Subscriber::new(rx, tx, raii))
+    Ok(Subscriber::create(rx, tx, raii))
 }
