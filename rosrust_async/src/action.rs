@@ -13,6 +13,8 @@ pub struct ActionHandle<T: Action> {
 }
 
 impl<T: Action> ActionServer<T> {
+    // TODO: I think this should actually be async as well. Pretty sure it's a
+    // blocking operation to call `ActionServer::new_simple`.
     pub fn new(topic: impl AsRef<str>) -> RosResult<Self> {
         // Why 16 of buffer size? Why not!
         let (tx, rx) = mpsc::channel(16);
@@ -37,12 +39,13 @@ pub type GoalBody<T> = <<T as Action>::Goal as ActionGoal>::Body;
 pub type ActionFeedback<T> = <<T as Action>::Feedback as ActionResponse>::Body;
 
 impl<T: Action> ActionHandle<T> {
-    pub fn renspose_builder(&self) -> ResponseBuilder<'_, T> {
+    // TODO: This should probably take ownership of self to ensure it's only going to get called once.
+    pub fn response_builder(&self) -> ResponseBuilder<'_, T> {
         self.handle.response()
     }
 
     pub async fn publish_feedback(&self, feedback: ActionFeedback<T>) -> Result<(), PubFeedBackError> {
-        // SAFETY: We create a static reference to the handle that can only realy live for the lifetime of
+        // SAFETY: We create a static reference to the handle that can only really live for the lifetime of
         // this function, so it's unsafe. However we know that `&self` must be valid until the end of the
         // function and we are `await`ing the `spawn_blocking` call so we make sure that the spawned thread
         // will terminate **before** this function returns.
