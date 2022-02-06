@@ -10,7 +10,8 @@ pub struct Client<Srv: ServicePair> {
 }
 
 impl<Srv: ServicePair> Client<Srv> {
-    pub fn new(topic: impl AsRef<str>) -> RosResult<Self> {
+    pub async fn new(topic: impl AsRef<str>) -> RosResult<Self> {
+        crate::wait_until_available(topic.as_ref().to_string()).await?;
         let cli = rosrust::client(topic.as_ref())?;
 
         Ok(Client {
