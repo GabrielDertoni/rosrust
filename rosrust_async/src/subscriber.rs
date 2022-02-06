@@ -57,7 +57,8 @@ pub fn subscribe<M: Message>(topic: impl AsRef<str>, queue_size: usize) -> RosRe
     let (tx, rx) = broadcast::channel(1);
     let tx_clone = tx.clone();
     let raii = rosrust::subscribe(topic.as_ref(), queue_size, move |msg: M| {
-        tx_clone.send(msg).unwrap();
+        // If the `send` fails, we don't care too much about it.
+        tx_clone.send(msg);
     })?;
 
     Ok(Subscriber::create(rx, tx, raii))

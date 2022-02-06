@@ -71,8 +71,7 @@ impl<S: ServicePair> RequestHandle<S> {
         }
     }
 
-
-    pub fn send_err(self, msg: impl Into<String>) {
+    pub async fn send_err(self, msg: impl Into<String>) {
         if let Err(_) = self.tx.send(Err(msg.into())) {
             panic!("failed to send value");
         }
