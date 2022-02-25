@@ -205,8 +205,8 @@ impl<T: Action> SimpleActionClient<T> {
     }
 }
 
-type CallbackStatusOnDone<T> = Box<dyn Fn(GoalState, Option<ResultBody<T>>) + Send>;
-type CallbackStatusOnActive = Box<dyn Fn() + Send>;
+type CallbackStatusOnDone<T> = Box<dyn FnOnce(GoalState, Option<ResultBody<T>>) + Send>;
+type CallbackStatusOnActive = Box<dyn FnOnce() + Send>;
 type CallbackStatusOnFeedback<T> = Box<dyn Fn(FeedbackBody<T>) + Send>;
 
 struct CallbackStatus<T: Action> {
@@ -236,14 +236,14 @@ impl<T: Action> CallbackStatus<T> {
             (State::Active, SimpleGoalState::Pending)
             | (State::Preempting, SimpleGoalState::Pending) => {
                 self.set_state(SimpleGoalState::Active);
-                if let Some(ref on_active) = self.on_active {
-                    (*on_active)();
+                if let Some(on_active) = self.on_active.take() {
+                    (on_active)();
                 }
             }
             (State::Done, SimpleGoalState::Pending) | (State::Done, SimpleGoalState::Active) => {
                 self.set_state(SimpleGoalState::Done);
-                if let Some(ref on_done) = self.on_done {
-                    (*on_done)(gh.goal_state(), gh.result());
+                if let Some(on_done) = self.on_done.take() {
+                    (on_done)(gh.goal_state(), gh.result());
                 }
                 let (ref lock, ref condition) = *self.done_condition;
                 let mut _condition_lock_guard = lock.lock().expect(MUTEX_LOCK_FAIL);
@@ -317,7 +317,7 @@ impl<'a, T: Action> SendGoalBuilder<'a, T> {
     #[inline]
     pub fn on_done<Fnew>(mut self, callback: Fnew) -> Self
     where
-        Fnew: Fn(GoalState, Option<ResultBody<T>>) + Send + 'static,
+        Fnew: FnOnce(GoalState, Option<ResultBody<T>>) + Send + 'static,
     {
         self.on_done = Some(Box::new(callback));
         self
@@ -326,7 +326,7 @@ impl<'a, T: Action> SendGoalBuilder<'a, T> {
     #[inline]
     pub fn on_active<Fnew>(mut self, callback: Fnew) -> Self
     where
-        Fnew: Fn() + Send + 'static,
+        Fnew: FnOnce() + Send + 'static,
     {
         self.on_active = Some(Box::new(callback));
         self
